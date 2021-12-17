@@ -74,18 +74,48 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
           data: paginatedItems,
         };
       }
-
-      // console.log(req.query.limit);
       
       try {
         let query = data;
-        const tours = await query;
+        const blog = await query;
+        let response = [];
+        if(req.query.tipe == 'paginate'){
+          response.push(paginator(blog, req.query.current , req.query.limit))
+        }
         res.status(200).json({
           status: "success",
-          results: tours.length,
-          data: 
-            paginator(tours, req.query.current , req.query.limit)
-          ,
+          results: blog.length,
+          data: response,
+        });
+      } catch (error) {
+        res.status(400).json({
+          status: "fail",
+          message: error,
+        });
+      }
+    });
+    
+    app.get("/sort/", async (req, res) => {
+      let sortBy = req.query.sortBy;
+      let sorted = {};
+      let key = req.query.key;
+
+      if(key == 'title'){
+        sorted = {'title': sortBy}
+      }else if(key =='date'){
+        console.log(key)
+        sorted = {'created_at': sortBy}
+      }
+      let data = db.collection("blog").find().sort(sorted).toArray().catch(console.error);
+
+      try {
+        let query = data;
+        const blog = await query;
+        res.status(200).json({
+          status: "success",
+          results: blog.length,
+          sortBy: sorted,
+          data: blog,
         });
       } catch (error) {
         res.status(400).json({
