@@ -37,7 +37,7 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
               comments: {
                 text: req.body.text,
                 name: req.body.name,
-                created_at: Date.now()
+                created_at: Date.now(),
               },
             },
           },
@@ -47,14 +47,58 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
         )
         .then((result) => res.json(result))
         .catch((error) => console.error(error));
-    })
-    
+    });
+
     // ========================
     // Routes Article
     // ========================
-    app.get("/", (req, res) => {
+    app.get("/", async (req, res) => {
+      let data = db.collection("blog").find().toArray().catch(console.error);
+
+      function paginator(data, current_page, per_page_items) {
+        // console.log(data)
+        let items = data
+        let page = current_page || 1,
+          per_page = per_page_items || 10,
+          offset = (page - 1) * per_page,
+          paginatedItems = items.slice(offset).slice(0, per_page_items),
+          total_pages = Math.ceil(items.length / per_page);
+
+        return {
+          page: page,
+          per_page: per_page,
+          pre_page: page - 1 ? page - 1 : null,
+          next_page: total_pages > page ? page + 1 : null,
+          total: items.length,
+          total_pages: total_pages,
+          data: paginatedItems,
+        };
+      }
+
+      // console.log(req.query.limit);
+      
+      try {
+        let query = data;
+        const tours = await query;
+        res.status(200).json({
+          status: "success",
+          results: tours.length,
+          data: 
+            paginator(tours, req.query.current , req.query.limit)
+          ,
+        });
+      } catch (error) {
+        res.status(400).json({
+          status: "fail",
+          message: error,
+        });
+      }
+    });
+
+    app.get("/findArticle/:word", (req, res) => {
+      var word = req.params.word;
       db.collection("blog")
-        .find()
+        .find({ article: new RegExp(word, "i") })
         .toArray()
         .then((blog) => {
           res.send(blog);
@@ -62,21 +106,10 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
         .catch(console.error);
     });
 
-    app.get("/findArticle/:word", (req, res) => {
-      var word = req.params.word;
-      db.collection("blog")
-        .find({"article": new RegExp(word, 'i')})
-        .toArray()
-        .then((blog) => {
-          res.send(blog);
-        })
-        .catch(console.error);
-    });
-    
     app.get("/find/:title", (req, res) => {
       var title = req.params.title;
       db.collection("blog")
-        .find({"title": new RegExp(title, 'i')})
+        .find({ title: new RegExp(title, "i") })
         .toArray()
         .then((blog) => {
           res.send(blog);
@@ -89,9 +122,9 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
       try {
         blogCollect
           .insertOne({
-            'title': req.body.title,
-            'article': req.body.article,
-            'created_at': Date.now()
+            title: req.body.title,
+            article: req.body.article,
+            created_at: Date.now(),
           })
           .then((result) => {
             res.send("success");
