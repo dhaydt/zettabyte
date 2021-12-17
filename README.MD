@@ -2,12 +2,13 @@ Zettabyte Backend Technical Test
 
 Route:
 
-Get Article:
+Get Article:  
   Method:     GET  
   Url:        http://localhost:3000/  
   Paginated : http://localhost:3000/?current=2&limit=1  
 
-Sort Article:  
+Sort Article: 
+  Method: GET   
   Sort By : Title Asc =>
   Url     : http://localhost:3000/sort/?key=title&sortBy=1  
   Sort By : Title Desc =>
